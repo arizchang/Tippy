@@ -15,21 +15,25 @@ private const val TAG = "MainActivity"
 private const val INITIAL_TIP_PERCENT = 15
 class MainActivity : AppCompatActivity() {
     private lateinit var etBaseAmount: EditText
+    private lateinit var etNumPeople: EditText
     private lateinit var seekBarTip: SeekBar
     private lateinit var tvTipPercentLabel: TextView
     private lateinit var tvTipAmount: TextView
     private lateinit var tvTotalAmount: TextView
     private lateinit var tvTipDescription: TextView
+    private lateinit var tvSplitAmount: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         etBaseAmount = findViewById(R.id.etBaseAmount)
+        etNumPeople = findViewById(R.id.etNumPeople)
         seekBarTip = findViewById(R.id.seekBarTip)
         tvTipPercentLabel = findViewById(R.id.tvTipPercentLabel)
         tvTipAmount = findViewById(R.id.tvTipAmount)
         tvTotalAmount = findViewById(R.id.tvTotalAmount)
         tvTipDescription = findViewById(R.id.tvTipDescription)
+        tvSplitAmount = findViewById(R.id.tvSplitAmount)
 
         seekBarTip.progress = INITIAL_TIP_PERCENT
         tvTipPercentLabel.text = "$INITIAL_TIP_PERCENT%"
@@ -38,7 +42,7 @@ class MainActivity : AppCompatActivity() {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 Log.i(TAG, "onProgressChanged $progress")
                 tvTipPercentLabel.text = "$progress%"
-                computeTipAndTotal()
+                computeTipTotalSplit()
                 updateTipDescription(progress)
             }
 
@@ -55,7 +59,19 @@ class MainActivity : AppCompatActivity() {
 
             override fun afterTextChanged(s: Editable?) {
                 Log.i(TAG, "afterTextChanged $s")
-                computeTipAndTotal()
+                computeTipTotalSplit()
+            }
+
+        })
+
+        etNumPeople.addTextChangedListener(object: TextWatcher {
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {
+                Log.i(TAG, "$s")
+                computeTipTotalSplit()
             }
 
         })
@@ -80,22 +96,31 @@ class MainActivity : AppCompatActivity() {
         tvTipDescription.setTextColor(color)
     }
 
-    private fun computeTipAndTotal() {
+    private fun computeTipTotalSplit() {
         if (etBaseAmount.text.isEmpty()) {
             tvTipAmount.text = ""
             tvTotalAmount.text = ""
             return
         }
+
+        var numPeople = 1
+        if (etNumPeople.text.isNotEmpty()) {
+            numPeople = etNumPeople.text.toString().toInt()
+        }
+        Log.i(TAG, "In compute $numPeople")
+
         // 1. Get value of the base and tip percent
         val baseAmount = etBaseAmount.text.toString().toDouble()
         val tipPercent = seekBarTip.progress
 
-        // 2. Compute the tip and total
+        // 2. Compute the tip, total, and split
         val tipAmount = baseAmount * tipPercent / 100
         val totalAmount = baseAmount + tipAmount
+        val splitAmount = totalAmount / numPeople
 
         // 3. Update UI
         tvTipAmount.text = "%.2f".format(tipAmount)
         tvTotalAmount.text = "%.2f".format(totalAmount)
+        tvSplitAmount.text = "%.2f".format(splitAmount)
     }
 }
